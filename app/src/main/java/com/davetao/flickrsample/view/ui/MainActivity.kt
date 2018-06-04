@@ -1,7 +1,8 @@
-package com.davetao.flickrsample
+package com.davetao.flickrsample.view.ui
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import com.davetao.flickrsample.R
 
 class MainActivity : AppCompatActivity() {
 
