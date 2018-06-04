@@ -45,7 +45,7 @@ class PhotoModule(private val application: Application) {
     @Provides
     @Singleton
     fun provideFlickrService(okHttpClient: OkHttpClient): FlickrService = Retrofit.Builder()
-            .baseUrl("https://api.flickr.com/services/rest/?")
+            .baseUrl("https://api.flickr.com/services/rest/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
