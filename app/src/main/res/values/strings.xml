@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">FlickrSample</string>
+    <string name="app_name">Search</string>
     <string name="search_text_hint">Search for your image here</string>
 </resources>
