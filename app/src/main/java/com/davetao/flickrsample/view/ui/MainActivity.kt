@@ -18,6 +18,7 @@ import com.davetao.flickrsample.view.adapter.ImageAdapter
 import com.davetao.flickrsample.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
+import android.support.design.widget.Snackbar
 
 
 class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
@@ -28,7 +29,9 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
     private lateinit var viewModel: MainViewModel
     private lateinit var searchViewItem: SearchView
     private lateinit var searchViewMenuItem: MenuItem
+
     private lateinit var adapter: ImageAdapter
+    private val layoutManager = GridLayoutManager(baseContext, 3)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +45,8 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
         val gridMargin = resources.getDimensionPixelOffset(R.dimen.margin)
 
-        view_search_results.layoutManager = GridLayoutManager(baseContext, 3)
+        view_search_results.layoutManager = layoutManager
+        view_search_results.addOnScrollListener(scrollListener)
         view_search_results.addItemDecoration(object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(outRect: Rect?, view: View?, parent: RecyclerView?, state: RecyclerView.State?) {
                 outRect?.set(gridMargin, gridMargin, gridMargin, gridMargin)
@@ -55,7 +59,27 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             view_refresh_layout.isRefreshing = screenState?.isSearching ?: false
             adapter.items = screenState?.searchResults ?: listOf()
             adapter.notifyDataSetChanged()
+
+            if(screenState?.searchError?.isNotBlank() == true) {
+                Snackbar.make(view_refresh_layout, screenState.searchError, Snackbar.LENGTH_LONG).show()
+            }
         })
+    }
+
+    private val scrollListener = object: RecyclerView.OnScrollListener() {
+        override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+            val totalVisibleItems = layoutManager.childCount
+            val totalItems = layoutManager.itemCount
+            val firstPosition = layoutManager.findFirstVisibleItemPosition()
+            if (viewModel.searchState.value?.isSearching == false) {
+                if (totalVisibleItems + firstPosition >= totalItems
+                        && totalItems >= viewModel.PAGE_SIZE
+                        && firstPosition >= 0) {
+                    viewModel.loadMore()
+                }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

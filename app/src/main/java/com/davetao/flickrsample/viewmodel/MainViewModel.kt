@@ -18,7 +18,7 @@ class MainViewModel @Inject constructor(private var service: FlickrService) : Vi
 
     private var activeSearchTask: Disposable? = null
     private var pageNumber = 0
-
+    val PAGE_SIZE: Int = 100
 
     /**
      * Set the search term and request new data from the api.
@@ -32,44 +32,60 @@ class MainViewModel @Inject constructor(private var service: FlickrService) : Vi
 
         this.pageNumber = 1
         if(searchTerm.isBlank()) {
-            currentState.searchResults = listOf()
+            currentState.searchResults = mutableListOf()
             searchState.postValue(currentState)
         }
         else {
 
-            activeSearchTask = service.search(searchTerm, pageNumber)
-                    .doOnSubscribe {
-                        currentState.isSearching = true
-                        searchState.postValue(currentState)
-                    }
-                    .subscribeOn(Schedulers.io())
-                    .map { result ->
-                        if (result.isOK()) {
-                            result.photos.photo.map { photo ->
-                                ListImage(
-                                        photo.id,
-                                        photo.url(),
-                                        photo.title
-                                )
-                            }
-                        } else {
-                            throw Exception("Did not get the correct response from Flickr search results")
-                        }
-                    }
-                    .doOnError {
-                        // just show the localised error for the time being
-                        currentState.searchError = it.localizedMessage
-                    }
-                    .doOnComplete {
-                        currentState.isSearching = false
-                        searchState.postValue(currentState)
-                    }
+            activeSearchTask = applySearch(currentState)
                     .subscribe {
-                        currentState.searchResults = it
+                        currentState.searchResults.clear()
+                        currentState.searchResults.addAll(it)
                     }
 
         }
     }
+
+    fun loadMore() {
+
+        val currentState = searchState.value ?: SearchState()
+        currentState.isLoadingMore = true
+        pageNumber++
+
+        activeSearchTask = applySearch(currentState)
+                .subscribe { currentState.searchResults.addAll(it) }
+
+    }
+
+
+    private fun applySearch(currentState: SearchState) =
+            service.search(currentState.searchTerm, pageNumber, PAGE_SIZE)
+                .doOnSubscribe {
+                    currentState.isSearching = true
+                    searchState.postValue(currentState)
+                }
+                .subscribeOn(Schedulers.io())
+                .map { result ->
+                    if (result.isOK()) {
+                        result.photos.photo.map { photo ->
+                            ListImage(
+                                    photo.id,
+                                    photo.url(),
+                                    photo.title
+                            )
+                        }
+                    } else {
+                        throw Exception("Did not get the correct response from Flickr search results")
+                    }
+                }
+                .doOnError {
+                    // just show the localised error for the time being
+                    currentState.searchError = it.localizedMessage
+                }
+                .doOnComplete {
+                    currentState.isSearching = false
+                    searchState.postValue(currentState)
+                }
 
     override fun onCleared() {
         super.onCleared()
