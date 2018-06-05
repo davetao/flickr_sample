@@ -2,12 +2,9 @@ package com.davetao.flickrsample.viewmodel
 
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
-import android.util.Log
 import com.davetao.flickrsample.repository.api.FlickrService
 import com.davetao.flickrsample.viewmodel.model.ListImage
 import com.davetao.flickrsample.viewmodel.model.SearchState
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -31,17 +28,23 @@ class MainViewModel @Inject constructor(private var service: FlickrService) : Vi
         currentState.searchTerm = searchTerm
 
         this.pageNumber = 1
-        if(searchTerm.isBlank()) {
+        if (searchTerm.isBlank()) {
             currentState.searchResults = mutableListOf()
             searchState.postValue(currentState)
-        }
-        else {
+        } else {
 
             activeSearchTask = applySearch(currentState)
-                    .subscribe {
-                        currentState.searchResults.clear()
-                        currentState.searchResults.addAll(it)
-                    }
+                    .subscribe(
+                            {
+                                currentState.searchResults.clear()
+                                currentState.searchResults.addAll(it)
+                            },
+                            {
+                                currentState.searchError = it.localizedMessage
+                                currentState.isSearching = false
+                                searchState.postValue(currentState)
+                            }
+                    )
 
         }
     }
@@ -53,39 +56,47 @@ class MainViewModel @Inject constructor(private var service: FlickrService) : Vi
         pageNumber++
 
         activeSearchTask = applySearch(currentState)
-                .subscribe { currentState.searchResults.addAll(it) }
+                .subscribe(
+                        {
+                            currentState.searchResults.addAll(it)
+                        },
+                        {
+                            currentState.searchError = it.localizedMessage
+                            currentState.isSearching = false
+                            searchState.postValue(currentState)
+                        })
 
     }
 
 
     private fun applySearch(currentState: SearchState) =
             service.search(currentState.searchTerm, pageNumber, PAGE_SIZE)
-                .doOnSubscribe {
-                    currentState.isSearching = true
-                    searchState.postValue(currentState)
-                }
-                .subscribeOn(Schedulers.io())
-                .map { result ->
-                    if (result.isOK()) {
-                        result.photos.photo.map { photo ->
-                            ListImage(
-                                    photo.id,
-                                    photo.url(),
-                                    photo.title
-                            )
-                        }
-                    } else {
-                        throw Exception("Did not get the correct response from Flickr search results")
+                    .doOnSubscribe {
+                        currentState.isSearching = true
+                        searchState.postValue(currentState)
                     }
-                }
-                .doOnError {
-                    // just show the localised error for the time being
-                    currentState.searchError = it.localizedMessage
-                }
-                .doOnComplete {
-                    currentState.isSearching = false
-                    searchState.postValue(currentState)
-                }
+                    .subscribeOn(Schedulers.io())
+                    .map { result ->
+                        if (result.isOK()) {
+                            result.photos.photo.map { photo ->
+                                ListImage(
+                                        photo.id,
+                                        photo.url(),
+                                        photo.title
+                                )
+                            }
+                        } else {
+                            throw Exception("Did not get the correct response from Flickr search results")
+                        }
+                    }
+                    .doOnError {
+                        // just show the localised error for the time being
+                        currentState.searchError = it.localizedMessage
+                    }
+                    .doOnComplete {
+                        currentState.isSearching = false
+                        searchState.postValue(currentState)
+                    }
 
     override fun onCleared() {
         super.onCleared()
