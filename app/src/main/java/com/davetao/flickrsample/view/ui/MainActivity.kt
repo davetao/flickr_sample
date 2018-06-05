@@ -3,7 +3,6 @@ package com.davetao.flickrsample.view.ui
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
-import android.content.Context
 import android.graphics.Rect
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -19,8 +18,6 @@ import com.davetao.flickrsample.view.adapter.ImageAdapter
 import com.davetao.flickrsample.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
-import android.content.Context.INPUT_METHOD_SERVICE
-import android.view.inputmethod.InputMethodManager
 
 
 class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
