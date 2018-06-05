@@ -71,10 +71,6 @@ class MainViewModel @Inject constructor(private var service: FlickrService) : Vi
         }
     }
 
-    fun refreshSearchTerm() {
-
-    }
-
     override fun onCleared() {
         super.onCleared()
         activeSearchTask?.dispose()

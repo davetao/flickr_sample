@@ -52,9 +52,7 @@ class MainActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
             }
         })
 
-        view_refresh_layout.setOnRefreshListener {
-            viewModel.refreshSearchTerm()
-        }
+        view_refresh_layout.isEnabled = false
 
         viewModel.searchState.observe(this, Observer { screenState ->
             view_refresh_layout.isRefreshing = screenState?.isSearching ?: false
