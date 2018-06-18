@@ -11,5 +11,5 @@ data class Photo(
         var isFriend: Boolean,
         var isFamily: Boolean
 ) {
-    fun url(): String = "http://farm$farm.static.flickr.com/$server/${id}_$secret.jpg"
+    fun url(): String = "http://farm$farm.static.flickr.com/$server/${id}_${secret}_m.jpg"
 }
